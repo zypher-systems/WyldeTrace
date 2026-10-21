@@ -1,0 +1,1 @@
+DELETE FROM app_settings WHERE key = 'webhook_delivery_retention_days';

@@ -1,0 +1,11 @@
+.git
+.env
+*.md
+tmp
+bin
+web/node_modules
+web/dist
+.pnpm-store
+coverage.out
+.cursor
+*.log

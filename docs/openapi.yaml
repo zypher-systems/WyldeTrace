@@ -1,0 +1,1684 @@
+openapi: 3.0.3
+info:
+  title: WyldeTrace API
+  version: "1.0"
+  description: |
+    Hand-maintained summary of the WyldeTrace HTTP surface (`/api/v1`).
+    Auth: `Authorization: Bearer <JWT|wt_…>`.
+    Session JWTs expire after **24 hours** (fixed TTL). Expired/invalid tokens return **401**.
+    CI: `TestOpenAPIRouteDrift` fails if chi routes and this file diverge.
+servers:
+  - url: /api/v1
+tags:
+  - name: Auth
+  - name: Inventory
+  - name: Discovery
+  - name: Admin
+  - name: Ops
+paths:
+  /api-tokens:
+    get:
+      tags: [Admin]
+      summary: List API tokens
+      responses:
+        "200":
+          description: Tokens
+    post:
+      tags: [Admin]
+      summary: Create API token (shown once)
+      responses:
+        "201":
+          description: Token + secret
+  /audit-logs:
+    get:
+      tags: [Admin]
+      summary: List audit logs
+      responses:
+        "200":
+          description: OK
+  /backup:
+    get:
+      tags: [Admin]
+      summary: JSON backup export
+      responses:
+        "200":
+          description: OK
+  /custom-fields:
+    get:
+      tags: [Admin]
+      summary: List custom field definitions
+      responses:
+        "200":
+          description: Custom field definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomFieldDef"
+    post:
+      tags: [Admin]
+      summary: Create custom field definition
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFieldDef"
+  /device-types:
+    get:
+      tags: [Inventory]
+      summary: List device types
+      responses:
+        "200":
+          description: Device types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceType"
+    post:
+      tags: [Inventory]
+      summary: Create device type
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceType"
+  /discovery-jobs:
+    get:
+      tags: [Discovery]
+      summary: List discovery jobs
+      responses:
+        "200":
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscoveryJob"
+    post:
+      tags: [Discovery]
+      summary: Create discovery job
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryJob"
+  /healthz:
+    get:
+      tags: [Ops]
+      summary: Health check (also available at /healthz outside /api/v1)
+      security: []
+      responses:
+        "200":
+          description: OK
+  /inbox:
+    get:
+      tags: [Discovery]
+      summary: Open discovery findings
+      responses:
+        "200":
+          description: OK
+  /instance:
+    get:
+      tags: [Admin]
+      summary: Instance diagnostics
+      responses:
+        "200":
+          description: OK
+  /ip-history:
+    get:
+      tags: [Inventory]
+      summary: IP history timeline
+      responses:
+        "200":
+          description: OK
+  /ip-requests:
+    get:
+      tags: [Inventory]
+      summary: List IP requests
+      responses:
+        "200":
+          description: IP requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IPRequest"
+    post:
+      tags: [Inventory]
+      summary: Create IP request
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRequest"
+  /ips:
+    get:
+      tags: [Inventory]
+      summary: List IPs
+      responses:
+        "200":
+          description: IP page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IP"
+  /locations:
+    get:
+      tags: [Inventory]
+      summary: List locations (site-scoped)
+      responses:
+        "200":
+          description: Location list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Location"
+    post:
+      tags: [Inventory]
+      summary: Create location (admin)
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+  /notifications:
+    get:
+      tags: [Ops]
+      summary: List in-app notifications
+      responses:
+        "200":
+          description: OK
+  /search:
+    get:
+      tags: [Inventory]
+      summary: Global search (site-scoped)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /settings:
+    get:
+      tags: [Admin]
+      summary: Get settings
+      responses:
+        "200":
+          description: OK
+    put:
+      tags: [Admin]
+      summary: Update settings
+      responses:
+        "200":
+          description: Updated
+  /subnets:
+    get:
+      tags: [Inventory]
+      summary: List subnets (site-scoped)
+      responses:
+        "200":
+          description: Subnet page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subnet"
+    post:
+      tags: [Inventory]
+      summary: Create subnet
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subnet"
+  /users:
+    get:
+      tags: [Admin]
+      summary: List users
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      tags: [Admin]
+      summary: Create user
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /vlans:
+    get:
+      tags: [Inventory]
+      summary: List VLANs
+      responses:
+        "200":
+          description: VLAN list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VLAN"
+    post:
+      tags: [Inventory]
+      summary: Create VLAN (editor+)
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VLAN"
+  /vrfs:
+    get:
+      tags: [Inventory]
+      summary: List VRFs
+      responses:
+        "200":
+          description: VRF list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VRF"
+    post:
+      tags: [Inventory]
+      summary: Create VRF
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VRF"
+  /webhooks:
+    get:
+      tags: [Admin]
+      summary: List webhooks
+      responses:
+        "200":
+          description: Webhooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Webhook"
+    post:
+      tags: [Admin]
+      summary: Create webhook
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+  /api-tokens/{id}:
+    delete:
+      tags: [Admin]
+      summary: Delete API token record
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /audit-logs/export.csv:
+    get:
+      tags: [Admin]
+      summary: Export audit logs CSV
+      responses:
+        "200":
+          description: OK
+  /audit-logs/purge:
+    post:
+      tags: [Admin]
+      summary: Purge audit logs
+      responses:
+        "200":
+          description: OK
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Email/password login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Invalid credentials
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current actor
+      responses:
+        "200":
+          description: User profile + site scope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Missing/invalid token
+  /auth/mfa:
+    get:
+      tags: [Auth]
+      summary: MFA enrollment status
+      responses:
+        "200":
+          description: MFA status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MFAStatus"
+  /auth/password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string }
+                new_password: { type: string, minLength: 8 }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusOK"
+  /backup/restore:
+    post:
+      tags: [Admin]
+      summary: Merge restore
+      responses:
+        "200":
+          description: OK
+  /custom-fields/{id}:
+    put:
+      tags: [Admin]
+      summary: Update custom field definition
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFieldDef"
+    delete:
+      tags: [Admin]
+      summary: Delete custom field definition
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /device-types/{id}:
+    put:
+      tags: [Inventory]
+      summary: Update device type
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceType"
+    delete:
+      tags: [Inventory]
+      summary: Delete device type
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /discovery-jobs/from-template:
+    post:
+      tags: [Discovery]
+      summary: Create discovery job from template
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryJob"
+  /discovery-jobs/templates:
+    get:
+      tags: [Discovery]
+      summary: List discovery job templates
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscoveryJobTemplate"
+    post:
+      tags: [Discovery]
+      summary: Create discovery job template
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryJobTemplate"
+  /discovery-jobs/{id}:
+    put:
+      tags: [Discovery]
+      summary: Update discovery job
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryJob"
+    delete:
+      tags: [Discovery]
+      summary: Delete discovery job
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /enrich/suggest:
+    get:
+      tags: [Inventory]
+      summary: Suggest device from OUI/ports
+      responses:
+        "200":
+          description: OK
+  /export/ips.csv:
+    get:
+      tags: [Inventory]
+      summary: Export IPs CSV
+      responses:
+        "200":
+          description: OK
+  /export/subnets.csv:
+    get:
+      tags: [Inventory]
+      summary: Export subnets CSV
+      responses:
+        "200":
+          description: OK
+  /import/dhcp-leases.csv:
+    post:
+      tags: [Inventory]
+      summary: Import DHCP leases CSV
+      responses:
+        "200":
+          description: OK
+  /import/dns-hosts:
+    post:
+      tags: [Inventory]
+      summary: Import DNS hosts file
+      responses:
+        "200":
+          description: OK
+  /import/ips.csv:
+    post:
+      tags: [Inventory]
+      summary: Import IPs CSV
+      responses:
+        "200":
+          description: OK
+  /import/subnets.csv:
+    post:
+      tags: [Inventory]
+      summary: Import subnets CSV
+      requestBody:
+        content:
+          text/csv:
+            schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /inbox/bulk:
+    post:
+      tags: [Discovery]
+      summary: Bulk inbox actions
+      responses:
+        "200":
+          description: OK
+  /integrations/deliveries:
+    get:
+      tags: [Ops]
+      summary: Integration delivery log
+      responses:
+        "200":
+          description: OK
+  /ip-requests/pending-count:
+    get:
+      tags: [Inventory]
+      summary: Count pending IP requests
+      responses:
+        "200":
+          description: OK
+  /ip-requests/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get IP request
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: IP request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRequest"
+    delete:
+      tags: [Inventory]
+      summary: Delete IP request
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /ips/bulk:
+    post:
+      tags: [Inventory]
+      summary: Bulk update IPs
+      responses:
+        "200":
+          description: OK
+  /ips/deleted:
+    get:
+      tags: [Inventory]
+      summary: List soft-deleted IPs
+      responses:
+        "200":
+          description: OK
+  /ips/purge-deleted:
+    post:
+      tags: [Inventory]
+      summary: Purge soft-deleted IPs
+      responses:
+        "200":
+          description: OK
+  /ips/{id}:
+    put:
+      tags: [Inventory]
+      summary: Update IP
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IP"
+    delete:
+      tags: [Inventory]
+      summary: Soft-delete IP
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /locations/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get location
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+    put:
+      tags: [Inventory]
+      summary: Update location
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+    delete:
+      tags: [Inventory]
+      summary: Delete location
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /notifications/read-all:
+    post:
+      tags: [Ops]
+      summary: Mark all notifications read
+      responses:
+        "204":
+          description: Updated
+  /reports/summary:
+    get:
+      tags: [Ops]
+      summary: Dashboard summary JSON
+      responses:
+        "200":
+          description: OK
+  /reports/summary.csv:
+    get:
+      tags: [Ops]
+      summary: Dashboard summary CSV
+      responses:
+        "200":
+          description: OK
+  /scanner/claim:
+    post:
+      tags: [Discovery]
+      summary: Claim discovered host
+      responses:
+        "200":
+          description: OK
+  /scanner/discover-subnets:
+    post:
+      tags: [Discovery]
+      summary: Probe child prefixes under supernet
+      responses:
+        "200":
+          description: OK
+  /scanner/snmp-enrich:
+    post:
+      tags: [Discovery]
+      summary: SNMP enrich (feature-gated)
+      responses:
+        "200":
+          description: OK
+  /scanner/sweep:
+    post:
+      tags: [Discovery]
+      summary: ICMP sweep inventory subnet
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Subnet out of scope
+  /subnets/bulk:
+    post:
+      tags: [Inventory]
+      summary: Bulk update subnets
+      responses:
+        "200":
+          description: OK
+  /subnets/deleted:
+    get:
+      tags: [Inventory]
+      summary: List soft-deleted subnets
+      responses:
+        "200":
+          description: OK
+  /subnets/purge-deleted:
+    post:
+      tags: [Inventory]
+      summary: Purge soft-deleted subnets
+      responses:
+        "200":
+          description: OK
+  /subnets/tags:
+    get:
+      tags: [Inventory]
+      summary: List subnet tags
+      responses:
+        "200":
+          description: OK
+  /subnets/tree:
+    get:
+      tags: [Inventory]
+      summary: Subnet hierarchy tree
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get subnet
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Subnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subnet"
+    put:
+      tags: [Inventory]
+      summary: Update subnet
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subnet"
+    delete:
+      tags: [Inventory]
+      summary: Soft-delete subnet
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /users/{id}:
+    put:
+      tags: [Admin]
+      summary: Update user
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      tags: [Admin]
+      summary: Delete user
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /vlans/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get VLAN
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: VLAN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VLAN"
+    put:
+      tags: [Inventory]
+      summary: Update VLAN
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VLAN"
+    delete:
+      tags: [Inventory]
+      summary: Delete VLAN
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /vrfs/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get VRF
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: VRF
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VRF"
+    put:
+      tags: [Inventory]
+      summary: Update VRF
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VRF"
+    delete:
+      tags: [Inventory]
+      summary: Delete VRF
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /webhooks/deliveries:
+    get:
+      tags: [Admin]
+      summary: List webhook deliveries
+      responses:
+        "200":
+          description: OK
+  /webhooks/preview:
+    post:
+      tags: [Admin]
+      summary: Preview webhook payload
+      responses:
+        "200":
+          description: OK
+  /webhooks/{id}:
+    put:
+      tags: [Admin]
+      summary: Update webhook
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+    delete:
+      tags: [Admin]
+      summary: Delete webhook
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /api-tokens/{id}/locations:
+    put:
+      tags: [Admin]
+      summary: Set API token locations
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+  /api-tokens/{id}/revoke:
+    post:
+      tags: [Admin]
+      summary: Revoke API token
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /auth/mfa/disable:
+    post:
+      tags: [Auth]
+      summary: Disable MFA for current user
+      responses:
+        "200":
+          description: OK
+  /auth/mfa/verify:
+    post:
+      tags: [Auth]
+      summary: Complete MFA login challenge
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mfa_token]
+              properties:
+                mfa_token: { type: string }
+                code: { type: string }
+                recovery_code: { type: string }
+      responses:
+        "200":
+          description: OK
+  /auth/oidc/callback:
+    get:
+      tags: [Auth]
+      summary: OIDC callback
+      security: []
+      responses:
+        "200":
+          description: OK
+  /auth/oidc/exchange:
+    post:
+      tags: [Auth]
+      summary: Exchange one-time OIDC code for JWT
+      security: []
+      responses:
+        "200":
+          description: OK
+  /auth/oidc/login:
+    get:
+      tags: [Auth]
+      summary: Start OIDC login
+      security: []
+      responses:
+        "200":
+          description: OK
+  /auth/oidc/preview:
+    post:
+      tags: [Auth]
+      summary: Preview OIDC claim mapping (admin)
+      responses:
+        "200":
+          description: OK
+  /auth/oidc/status:
+    get:
+      tags: [Auth]
+      summary: OIDC enabled flag
+      security: []
+      responses:
+        "200":
+          description: OK
+  /backup/restore/preview:
+    post:
+      tags: [Admin]
+      summary: Preview backup restore
+      responses:
+        "200":
+          description: OK
+  /discovery-jobs/templates/{id}:
+    put:
+      tags: [Discovery]
+      summary: Update discovery job template
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryJobTemplate"
+    delete:
+      tags: [Discovery]
+      summary: Delete discovery job template
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted
+  /discovery-jobs/{id}/run:
+    post:
+      tags: [Discovery]
+      summary: Run job now
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /discovery-jobs/{id}/runs:
+    get:
+      tags: [Discovery]
+      summary: Job run history
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /inbox/{id}/claim:
+    post:
+      tags: [Discovery]
+      summary: Claim finding into inventory
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /inbox/{id}/dismiss:
+    post:
+      tags: [Discovery]
+      summary: Dismiss finding
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /inbox/{id}/mark-available:
+    post:
+      tags: [Discovery]
+      summary: Mark finding available
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /integrations/kea/sync:
+    post:
+      tags: [Ops]
+      summary: Sync Kea reservations from IP ranges
+      responses:
+        "200":
+          description: OK
+  /ip-requests/{id}/approve:
+    post:
+      tags: [Inventory]
+      summary: Approve IP request
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRequest"
+  /ip-requests/{id}/deny:
+    post:
+      tags: [Inventory]
+      summary: Deny IP request
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRequest"
+  /ips/{id}/restore:
+    post:
+      tags: [Inventory]
+      summary: Restore soft-deleted IP
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /notifications/{id}/read:
+    post:
+      tags: [Ops]
+      summary: Mark one notification read
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Updated
+  /reports/summary/dispatch:
+    post:
+      tags: [Ops]
+      summary: Dispatch summary report
+      responses:
+        "200":
+          description: OK
+  /scanner/discover-subnets/commit:
+    post:
+      tags: [Discovery]
+      summary: Commit discovered subnets
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/allocate-child:
+    post:
+      tags: [Inventory]
+      summary: Allocate first free child prefix
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "201":
+          description: Child subnet created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subnet"
+  /subnets/{id}/children:
+    get:
+      tags: [Inventory]
+      summary: List child subnets
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/ip-map:
+    get:
+      tags: [Inventory]
+      summary: Subnet IP occupancy map
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/ips:
+    get:
+      tags: [Inventory]
+      summary: List IPs in subnet
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: IP page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IP"
+    post:
+      tags: [Inventory]
+      summary: Create IP
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IP"
+  /subnets/{id}/merge:
+    post:
+      tags: [Inventory]
+      summary: Merge with sibling
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/ranges:
+    get:
+      tags: [Inventory]
+      summary: List subnet IP ranges
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: IP ranges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IPRange"
+    post:
+      tags: [Inventory]
+      summary: Create IP range
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRange"
+  /subnets/{id}/resize:
+    post:
+      tags: [Inventory]
+      summary: Resize subnet CIDR
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/restore:
+    post:
+      tags: [Inventory]
+      summary: Restore soft-deleted subnet
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/settings:
+    get:
+      tags: [Inventory]
+      summary: Get subnet settings
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+    put:
+      tags: [Inventory]
+      summary: Update subnet settings
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+  /subnets/{id}/split:
+    post:
+      tags: [Inventory]
+      summary: Split subnet into halves
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/utilization:
+    get:
+      tags: [Inventory]
+      summary: Subnet utilization
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /users/{id}/locations:
+    get:
+      tags: [Admin]
+      summary: Get user site memberships
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+    put:
+      tags: [Admin]
+      summary: Set user site memberships
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: Updated
+  /webhooks/deliveries/purge:
+    post:
+      tags: [Admin]
+      summary: Purge webhook deliveries
+      responses:
+        "200":
+          description: OK
+  /webhooks/{id}/deliveries:
+    get:
+      tags: [Admin]
+      summary: List deliveries for webhook
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /webhooks/{id}/preview:
+    post:
+      tags: [Admin]
+      summary: Preview webhook by id
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /webhooks/{id}/test:
+    post:
+      tags: [Admin]
+      summary: Send test webhook
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /auth/mfa/enroll/begin:
+    post:
+      tags: [Auth]
+      summary: Begin TOTP enrollment
+      responses:
+        "200":
+          description: OK
+  /auth/mfa/enroll/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm TOTP enrollment
+      responses:
+        "200":
+          description: OK
+  /subnets/{id}/ips/next:
+    post:
+      tags: [Inventory]
+      summary: Allocate next free IP
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "201":
+          description: Allocated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IP"
+        "409":
+          description: No free addresses
+  /subnets/{id}/ranges/{rangeID}:
+    put:
+      tags: [Inventory]
+      summary: Update IP range
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/RangeID"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPRange"
+    delete:
+      tags: [Inventory]
+      summary: Delete IP range
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/RangeID"
+      responses:
+        "204":
+          description: Deleted
+  /users/{id}/mfa/disable:
+    post:
+      tags: [Admin]
+      summary: Admin disable user MFA
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK
+  /webhooks/deliveries/{deliveryID}/retry:
+    post:
+      tags: [Admin]
+      summary: Retry webhook delivery
+      parameters:
+        - $ref: "#/components/parameters/DeliveryID"
+      responses:
+        "200":
+          description: OK
+components:
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RangeID:
+      name: rangeID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeliveryID:
+      name: deliveryID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    StatusOK:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, example: ok }
+    MFAStatus:
+      type: object
+      properties:
+        totp_enabled: { type: boolean }
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, editor, readonly] }
+        location_ids:
+          type: array
+          items: { type: string, format: uuid }
+        site_scoped: { type: boolean }
+        totp_enabled: { type: boolean }
+        using_default_password: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Location:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    VRF:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        rd: { type: string }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    VLAN:
+      type: object
+      required: [id, vid, name]
+      properties:
+        id: { type: string, format: uuid }
+        vid: { type: integer }
+        name: { type: string }
+        location_id: { type: string, format: uuid, nullable: true }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    DeviceType:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CustomFieldDef:
+      type: object
+      required: [id, entity_type, key, label, field_type]
+      properties:
+        id: { type: string, format: uuid }
+        entity_type: { type: string }
+        key: { type: string }
+        label: { type: string }
+        field_type: { type: string, enum: [string, number, boolean, select] }
+        required: { type: boolean }
+        options:
+          type: array
+          items: { type: string }
+        sort_order: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Subnet:
+      type: object
+      required: [id, cidr, name, vrf_id]
+      properties:
+        id: { type: string, format: uuid }
+        cidr: { type: string }
+        name: { type: string }
+        description: { type: string }
+        location_id: { type: string, format: uuid, nullable: true }
+        vrf_id: { type: string, format: uuid }
+        vlan_id: { type: string, format: uuid, nullable: true }
+        vlan_vid: { type: integer, nullable: true }
+        parent_id: { type: string, format: uuid, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        custom_fields:
+          type: object
+          additionalProperties: true
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        used: { type: integer }
+        total: { type: integer }
+        free: { type: integer }
+        percent: { type: number }
+        sparse: { type: boolean }
+        next_ip: { type: string }
+    IP:
+      type: object
+      required: [id, address, subnet_id, status]
+      properties:
+        id: { type: string, format: uuid }
+        address: { type: string }
+        subnet_id: { type: string, format: uuid }
+        hostname: { type: string }
+        status: { type: string, enum: [available, assigned, reserved, dhcp] }
+        device_type_id: { type: string, format: uuid, nullable: true }
+        location_id: { type: string, format: uuid, nullable: true }
+        notes: { type: string }
+        reserved_until: { type: string, format: date-time, nullable: true }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        mac_address: { type: string }
+        open_ports: { type: string }
+        interface_name: { type: string }
+        switch_id: { type: string }
+        custom_fields:
+          type: object
+          additionalProperties: true
+        vendor: { type: string }
+        device_hint: { type: string }
+        deleted_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    IPRange:
+      type: object
+      required: [id, subnet_id, start_address, end_address]
+      properties:
+        id: { type: string, format: uuid }
+        subnet_id: { type: string, format: uuid }
+        name: { type: string }
+        start_address: { type: string }
+        end_address: { type: string }
+        role: { type: string }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    IPRequest:
+      type: object
+      required: [id, requester_id, subnet_id, status]
+      properties:
+        id: { type: string, format: uuid }
+        requester_id: { type: string, format: uuid }
+        requester_email: { type: string }
+        subnet_id: { type: string, format: uuid }
+        subnet_cidr: { type: string }
+        subnet_name: { type: string }
+        range_id: { type: string, format: uuid, nullable: true }
+        hostname: { type: string }
+        notes: { type: string }
+        requested_address: { type: string }
+        status: { type: string }
+        allocated_ip_id: { type: string, format: uuid, nullable: true }
+        allocated_address: { type: string }
+        reviewed_by: { type: string, format: uuid, nullable: true }
+        review_notes: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        reviewed_at: { type: string, format: date-time, nullable: true }
+    DiscoveryJob:
+      type: object
+      required: [id, name, subnet_id]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        subnet_id: { type: string, format: uuid }
+        interval_minutes: { type: integer }
+        enabled: { type: boolean }
+        enrich: { type: boolean }
+        last_run_at: { type: string, format: date-time, nullable: true }
+        last_status: { type: string }
+        last_summary: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    DiscoveryJobTemplate:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        interval_minutes: { type: integer }
+        enrich: { type: boolean }
+        enabled_default: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Webhook:
+      type: object
+      required: [id, name, url]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        url: { type: string }
+        secret_set: { type: boolean }
+        events:
+          type: array
+          items: { type: string }
+        format: { type: string }
+        enabled: { type: boolean }
+        last_status: { type: string }
+        last_error: { type: string }
+        last_sent_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+

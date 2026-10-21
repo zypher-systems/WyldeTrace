@@ -1,0 +1,40 @@
+services:
+  web:
+    profiles: ["never"]
+
+  api:
+    profiles: ["never"]
+
+  tools:
+    profiles: ["never"]
+
+  # Production: fail closed — no lab WYLDTRACE_DEV / changeme defaults.
+  # Set JWT_SECRET, ADMIN_PASSWORD, DATABASE_URL, CORS_ORIGINS, and SETTINGS_ENCRYPTION_KEY in .env.
+  # Multi-replica API is supported only against shared Postgres: the scheduler holds
+  # session-scoped pg_try_advisory_lock on a dedicated pool connection for each tick,
+  # and per-job locks for RunNow / due sweeps (lock + unlock must share that session).
+  # Terminate TLS at a reverse proxy; do not publish Postgres publicly.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      HTTP_ADDR: ${HTTP_ADDR:-:8080}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@wyldetech.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      WYLDTRACE_DEV: ${WYLDTRACE_DEV:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      MIGRATIONS_PATH: /app/db/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    restart: unless-stopped

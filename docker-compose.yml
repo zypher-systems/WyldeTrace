@@ -1,0 +1,96 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wyldetrace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wyldetrace}
+      POSTGRES_DB: ${POSTGRES_DB:-wyldetrace}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wyldetrace} -d ${POSTGRES_DB:-wyldetrace}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://wyldetrace:wyldetrace@db:5432/wyldetrace?sslmode=disable}
+      HTTP_ADDR: ${HTTP_ADDR:-:8080}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@wyldetech.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      WYLDTRACE_DEV: ${WYLDTRACE_DEV:-true}
+      MIGRATIONS_PATH: /app/db/migrations
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:5173}
+      OIDC_ENABLED: ${OIDC_ENABLED:-false}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URL: ${OIDC_REDIRECT_URL:-http://localhost:8080/api/v1/auth/oidc/callback}
+      OIDC_SCOPES: ${OIDC_SCOPES:-openid,profile,email}
+      OIDC_DEFAULT_ROLE: ${OIDC_DEFAULT_ROLE:-readonly}
+      OIDC_AUTO_PROVISION: ${OIDC_AUTO_PROVISION:-true}
+      OIDC_GROUPS_CLAIM: ${OIDC_GROUPS_CLAIM:-groups}
+      OIDC_ROLE_CLAIM: ${OIDC_ROLE_CLAIM:-role}
+      OIDC_ROLE_MAP: ${OIDC_ROLE_MAP:-}
+      OIDC_SYNC_ROLE: ${OIDC_SYNC_ROLE:-false}
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      db:
+        condition: service_healthy
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+  web:
+    image: node:22-alpine
+    working_dir: /web
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8080
+    volumes:
+      - ./web:/web
+      - web-node-modules:/web/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    depends_on:
+      - api
+
+  tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://wyldetrace:wyldetrace@db:5432/wyldetrace?sslmode=disable}
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tools
+    entrypoint: ["sh", "-c"]
+    command: ["true"]
+
+volumes:
+  pgdata:
+  go-mod-cache:
+  go-build-cache:
+  web-node-modules:

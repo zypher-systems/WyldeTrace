@@ -1,0 +1,44 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "queries"
+    schema:
+      - "migrations/*.up.sql"
+    gen:
+      go:
+        package: "sqlcdb"
+        out: "../internal/db/sqlc"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_empty_slices: true
+        overrides:
+          - db_type: "uuid"
+            nullable: false
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/jackc/pgx/v5/pgtype"
+              type: "UUID"
+          - db_type: "pg_catalog.cidr"
+            go_type: "string"
+          - db_type: "cidr"
+            go_type: "string"
+          - db_type: "pg_catalog.inet"
+            go_type: "string"
+          - db_type: "inet"
+            go_type: "string"
+          - db_type: "user_role"
+            go_type: "string"
+          - db_type: "ip_status"
+            go_type: "string"
+          - db_type: "jsonb"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"
+          - db_type: "pg_catalog.jsonb"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"

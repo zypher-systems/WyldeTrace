@@ -1,0 +1,1 @@
+DELETE FROM app_settings WHERE key = 'audit_retention_days';

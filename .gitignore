@@ -1,0 +1,16 @@
+.env
+*.pem
+*.key
+bin/
+tmp/
+web/node_modules/
+web/.vite/
+.DS_Store
+*.log
+coverage.out
+
+# Package-manager caches and build output
+.pnpm-store/
+web/pnpm-lock.yaml
+web/dist/*
+!web/dist/.gitkeep

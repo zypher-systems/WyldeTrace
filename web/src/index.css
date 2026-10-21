@@ -1,0 +1,640 @@
+@import "tailwindcss";
+
+/*
+ * WyldeTrace design tokens — "network console".
+ *
+ * The zinc/slate scales are remapped to a blue-black ink ramp so every legacy
+ * `*-zinc-*` utility picks up the palette without per-page edits. New code
+ * should prefer the semantic tokens (surface/border/fg/brand/status).
+ */
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-zinc-50: #f5f7fb;
+  --color-zinc-100: #e8ecf4;
+  --color-zinc-200: #d0d6e3;
+  --color-zinc-300: #adb6c9;
+  --color-zinc-400: #8691a9;
+  --color-zinc-500: #626d86;
+  --color-zinc-600: #48526a;
+  --color-zinc-700: #333c52;
+  --color-zinc-800: #222939;
+  --color-zinc-900: #151a26;
+  --color-zinc-950: #0c1019;
+
+  --color-slate-400: #8691a9;
+  --color-slate-500: #626d86;
+  --color-slate-900: #151a26;
+
+  --color-canvas: #080b12;
+  --color-surface: #0e121c;
+  --color-surface-raised: #131825;
+  --color-surface-overlay: #1a2030;
+  --color-surface-hover: #1d2435;
+  --color-border: #1f2638;
+  --color-border-strong: #2c3549;
+  --color-fg: #e8ecf4;
+  --color-muted: #8691a9;
+  --color-subtle: #626d86;
+
+  --color-brand: #2ee6c3;
+  --color-brand-dim: #1fc9a8;
+  --color-brand-ink: #04211b;
+  --color-accent: #7c9cff;
+  --color-accent-blue: #5cc8ff;
+  --color-danger: #ff6b7a;
+  --color-warning: #ffb547;
+
+  --color-status-available: #2a3a44;
+  --color-status-assigned: #2ee6c3;
+  --color-status-reserved: #ffb547;
+  --color-status-dhcp: #5cc8ff;
+  --color-status-deleted: #7a3340;
+  --color-status-empty: #131825;
+  --color-status-special: #0e121c;
+
+  --radius-card: 0.875rem;
+  --shadow-pop: 0 18px 50px -12px rgb(0 0 0 / 0.65), 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-canvas);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  color: var(--color-fg);
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(46 230 195 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgb(124 156 255 / 0.06), transparent 55%),
+    var(--color-canvas);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgb(46 230 195 / 0.3);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand) 70%, transparent);
+  outline-offset: 2px;
+}
+
+@keyframes wt-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wt-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wt-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.wt-animate-in {
+  animation: wt-fade-up 0.28s ease-out both;
+}
+
+.wt-animate-fade {
+  animation: wt-fade-in 0.2s ease-out both;
+}
+
+.wt-animate-pop {
+  animation: wt-pop 0.16s ease-out both;
+}
+
+.wt-animate-slide {
+  animation: wt-slide-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@layer base {
+/* Legacy raw inputs/selects pick up the same look. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not(.wt-bare),
+select:not(.wt-bare),
+textarea:not(.wt-bare) {
+  border-radius: 0.5rem;
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
+  color: var(--color-fg);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not(.wt-bare):focus,
+select:not(.wt-bare):focus,
+textarea:not(.wt-bare):focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-brand);
+}
+
+}
+
+@layer components {
+/* ---- Typography ---- */
+
+.wt-page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--color-fg);
+}
+
+.wt-page-sub {
+  margin-top: 0.3rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.wt-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+}
+
+/* ---- Surfaces ---- */
+
+.wt-panel,
+.wt-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 40%),
+    var(--color-surface-raised);
+}
+
+.wt-card-interactive {
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.wt-card-interactive:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
+  background-color: var(--color-surface-hover);
+}
+
+.wt-divider {
+  border-color: var(--color-border);
+}
+
+/* ---- Form controls ---- */
+
+.wt-input {
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-fg);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+textarea.wt-input {
+  height: auto;
+  padding: 0.5rem 0.75rem;
+}
+
+select.wt-input {
+  padding-right: 2rem;
+}
+
+.wt-input::placeholder {
+  color: var(--color-subtle);
+}
+
+.wt-input:hover {
+  border-color: #3a4560;
+}
+
+.wt-input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.wt-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-zinc-300);
+}
+
+.wt-hint {
+  font-size: 0.75rem;
+  color: var(--color-subtle);
+}
+
+/* ---- Buttons ---- */
+
+.wt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 2.25rem;
+  white-space: nowrap;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.wt-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.wt-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.wt-btn-sm {
+  height: 1.875rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
+}
+
+.wt-btn-icon {
+  width: 2.25rem;
+  padding: 0;
+}
+
+.wt-btn-sm.wt-btn-icon {
+  width: 1.875rem;
+}
+
+.wt-btn-primary {
+  background: var(--color-brand);
+  color: var(--color-brand-ink);
+  box-shadow: 0 0 0 1px rgb(46 230 195 / 0.4), 0 6px 20px -8px rgb(46 230 195 / 0.55);
+}
+
+.wt-btn-primary:hover:not(:disabled) {
+  background: #5cf0d4;
+  color: var(--color-brand-ink);
+}
+
+.wt-btn-secondary {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-overlay);
+  color: var(--color-zinc-100);
+}
+
+.wt-btn-secondary:hover:not(:disabled) {
+  border-color: #3d4862;
+  background: var(--color-surface-hover);
+}
+
+.wt-btn-ghost {
+  background: transparent;
+  color: var(--color-zinc-300);
+}
+
+.wt-btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-overlay);
+  color: var(--color-fg);
+}
+
+.wt-btn-danger {
+  border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  color: #ffa3ad;
+}
+
+.wt-btn-danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-danger) 60%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+}
+
+.wt-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  height: 1.625rem;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-zinc-300);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.wt-btn-pill:hover {
+  background: var(--color-surface-overlay);
+  border-color: var(--color-border-strong);
+  color: var(--color-fg);
+}
+
+.wt-btn-pill-danger {
+  color: #ff9aa5;
+}
+
+.wt-btn-pill-danger:hover {
+  border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  color: #ffc2c9;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+/* ---- Badges ---- */
+
+.wt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-overlay);
+  color: var(--color-zinc-300);
+}
+
+.wt-badge-brand {
+  border-color: rgb(46 230 195 / 0.3);
+  background: rgb(46 230 195 / 0.1);
+  color: #7ff3dc;
+}
+
+.wt-badge-info {
+  border-color: rgb(92 200 255 / 0.3);
+  background: rgb(92 200 255 / 0.1);
+  color: #9adcff;
+}
+
+.wt-badge-warn {
+  border-color: rgb(255 181 71 / 0.3);
+  background: rgb(255 181 71 / 0.1);
+  color: #ffd08a;
+}
+
+.wt-badge-danger {
+  border-color: rgb(255 107 122 / 0.3);
+  background: rgb(255 107 122 / 0.1);
+  color: #ffa3ad;
+}
+
+.wt-badge-accent {
+  border-color: rgb(124 156 255 / 0.3);
+  background: rgb(124 156 255 / 0.1);
+  color: #b3c4ff;
+}
+
+.wt-count {
+  display: inline-flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-brand);
+  color: var(--color-brand-ink);
+}
+
+.wt-kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--color-border-strong);
+  border-bottom-width: 2px;
+  padding: 0 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+}
+
+/* ---- Tables ---- */
+
+.wt-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-raised);
+}
+
+.wt-table-wrap table thead,
+table.wt-table thead {
+  background: var(--color-surface);
+}
+
+.wt-table-wrap table th,
+table.wt-table th {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+}
+
+.wt-table-wrap table tbody tr,
+table.wt-table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.wt-table-wrap table tbody tr:hover,
+table.wt-table tbody tr:hover {
+  background: rgb(255 255 255 / 0.018);
+}
+
+/* ---- Tabs ---- */
+
+.wt-tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wt-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: color 0.15s ease;
+}
+
+.wt-tab:hover {
+  color: var(--color-fg);
+}
+
+.wt-tab[aria-selected="true"],
+.wt-tab.active {
+  color: var(--color-fg);
+}
+
+.wt-tab[aria-selected="true"]::after,
+.wt-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-brand);
+  box-shadow: 0 0 12px rgb(46 230 195 / 0.6);
+}
+
+.wt-tab svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* ---- Segmented control ---- */
+
+.wt-segment {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: 0.55rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 2px;
+}
+
+.wt-segment > button,
+.wt-segment > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.wt-segment > [aria-pressed="true"],
+.wt-segment > .active {
+  background: var(--color-surface-overlay);
+  color: var(--color-fg);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+}
+
+.wt-segment svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* ---- Misc ---- */
+
+.wt-status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+}
+
+.wt-meter {
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-overlay);
+}
+
+.wt-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-brand-dim), var(--color-brand));
+  transition: width 0.4s ease;
+}
+
+.wt-meter.warn > span {
+  background: linear-gradient(90deg, #e59a2f, var(--color-warning));
+}
+
+.wt-meter.crit > span {
+  background: linear-gradient(90deg, #e5475a, var(--color-danger));
+}
+
+.wt-mono-hero {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.wt-grid-bg {
+  background-image: linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+}

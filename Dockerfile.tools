@@ -1,0 +1,25 @@
+FROM golang:1.23-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG SQLC_VERSION=1.27.0
+ARG MIGRATE_VERSION=4.18.1
+
+RUN curl -sSL "https://github.com/sqlc-dev/sqlc/releases/download/v${SQLC_VERSION}/sqlc_${SQLC_VERSION}_linux_amd64.tar.gz" \
+    | tar -xz -C /usr/local/bin sqlc \
+    && curl -sSL "https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz" \
+    | tar -xz -C /usr/local/bin migrate \
+    && chmod +x /usr/local/bin/sqlc /usr/local/bin/migrate
+
+WORKDIR /app
+
+ENV GOFLAGS=-buildvcs=false
+
+COPY go.mod go.sum* ./
+RUN go mod download || true
+
+COPY . .
+
+CMD ["true"]
