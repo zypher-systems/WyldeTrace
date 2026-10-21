@@ -13,7 +13,10 @@ COPY go.mod go.sum* ./
 RUN go mod download
 COPY . .
 COPY --from=web-build /web/dist ./web/dist
-RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -ldflags="-s -w" -o /out/wyldetrace ./cmd/wyldetrace
+ARG VERSION=dev
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false \
+    -ldflags="-s -w -X github.com/wyldetechnologies/wyldetrace/internal/handlers.Version=${VERSION}" \
+    -o /out/wyldetrace ./cmd/wyldetrace
 
 # ---- Runtime ----
 FROM debian:bookworm-slim

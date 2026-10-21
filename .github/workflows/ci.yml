@@ -1,0 +1,284 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/wyldetrace
+  POSTGRES_USER: wyldetrace
+  POSTGRES_PASSWORD: wyldetrace
+  POSTGRES_DB: wyldetrace
+
+jobs:
+  check-go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wyldetrace
+          POSTGRES_PASSWORD: wyldetrace
+          POSTGRES_DB: wyldetrace
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wyldetrace -d wyldetrace"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Unit and integration tests
+        env:
+          DATABASE_URL: postgres://wyldetrace:wyldetrace@localhost:5432/wyldetrace?sslmode=disable
+        run: |
+          go test -buildvcs=false ./...
+          go test -buildvcs=false -tags=integration ./...
+
+      - name: Install sqlc
+        run: |
+          curl -fsSL "https://github.com/sqlc-dev/sqlc/releases/download/v1.27.0/sqlc_1.27.0_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin sqlc
+
+      - name: sqlc drift
+        run: |
+          sqlc -f db/sqlc.yaml generate
+          git diff --exit-code -- internal/db/sqlc
+
+  check-web:
+    name: Web tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: Image smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [check-go, check-web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --build-arg VERSION="$(tr -d '[:space:]' < VERSION)" -t wyldetrace:ci .
+
+      - name: Run smoke, link, and API checks
+        run: |
+          set -euo pipefail
+          NET="wtci-${GITHUB_RUN_ID}"
+          PG="wt-pg-${GITHUB_RUN_ID}"
+          APP="wt-app-${GITHUB_RUN_ID}"
+          cleanup() {
+            docker rm -f "$APP" "$PG" >/dev/null 2>&1 || true
+            docker network rm "$NET" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker network create "$NET"
+          docker run -d --name "$PG" --network "$NET" \
+            -e POSTGRES_USER="$POSTGRES_USER" \
+            -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+            -e POSTGRES_DB="$POSTGRES_DB" \
+            postgres:16-alpine
+          for i in $(seq 1 60); do
+            if docker exec "$PG" pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              docker logs "$PG" >&2 || true
+              echo "postgres container not ready" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run -d --name "$APP" --network "$NET" -p 127.0.0.1:8080:8080 \
+            -e DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PG}:5432/${POSTGRES_DB}?sslmode=disable" \
+            -e HTTP_ADDR=":8080" \
+            -e JWT_SECRET="ci-pipeline-jwt-secret-do-not-use-in-prod" \
+            -e ADMIN_EMAIL="admin@wyldetech.local" \
+            -e ADMIN_PASSWORD="changeme" \
+            -e WYLDTRACE_DEV="true" \
+            -e MIGRATIONS_PATH="/app/db/migrations" \
+            -e PUBLIC_APP_URL="http://127.0.0.1:8080" \
+            wyldetrace:ci
+
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 5 http://127.0.0.1:8080/healthz >/dev/null; then
+              echo "app reachable"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              docker logs "$APP" >&2 || true
+              echo "app still unreachable" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          BASE_URL="http://127.0.0.1:8080" \
+            ADMIN_EMAIL="admin@wyldetech.local" \
+            ADMIN_PASSWORD="changeme" \
+            sh scripts/ci-smoke.sh
+          BASE_URL="http://127.0.0.1:8080" sh scripts/ci-link.sh
+          BASE_URL="http://127.0.0.1:8080" \
+            ADMIN_EMAIL="admin@wyldetech.local" \
+            ADMIN_PASSWORD="changeme" \
+            sh scripts/ci-e2e.sh
+
+  image:
+    name: Build ${{ matrix.suffix }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [e2e]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            suffix: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            suffix: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Platform pair
+        run: |
+          platform="${{ matrix.platform }}"
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version
+        id: version
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          provenance: false
+          sbom: false
+          build-args: VERSION=${{ steps.version.outputs.version }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.suffix }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Read version
+        id: version
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Create manifest
+        working-directory: /tmp/digests
+        run: |
+          set -euo pipefail
+          sha="${GITHUB_SHA::12}"
+          version="${{ steps.version.outputs.version }}"
+          args=()
+          for digest in *; do
+            args+=("${IMAGE}@sha256:${digest}")
+          done
+          docker buildx imagetools create \
+            -t "${IMAGE}:${version}" \
+            -t "${IMAGE}:latest" \
+            -t "${IMAGE}:${sha}" \
+            "${args[@]}"
+
+      - name: Make the package public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            if gh api --method PUT \
+              -H "Accept: application/vnd.github+json" \
+              "/orgs/${{ github.repository_owner }}/packages/container/wyldetrace/visibility" \
+              -f visibility=public; then
+              echo "package is public"
+              exit 0
+            fi
+            echo "package not visible yet (${i})"
+            sleep 10
+          done
+          exit 1
+
+      - name: Inspect image
+        run: docker buildx imagetools inspect "${IMAGE}:latest"

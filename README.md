@@ -38,9 +38,21 @@ make test          # go test ./... (-tags=integration; needs db via compose)
 make prod          # production app + db
 ```
 
-## Checks
+## CI
 
-No CI until 1.0.0. Before merging, run `make test` (Go unit + integration tests), and in `web/` run the Vitest suite and the SPA build (`test` and `build` scripts).
+Pushes to `main` run the Go tests, the web tests, and a smoke of the production image, then publish that image:
+
+| Image | When |
+|-------|------|
+| `ghcr.io/zypher-systems/wyldetrace:latest` | every push to `main` |
+| `ghcr.io/zypher-systems/wyldetrace:<version>` | the `VERSION` file, on `main` |
+| `ghcr.io/zypher-systems/wyldetrace:<commit>` | every publish |
+
+Each tag is a multi-arch manifest (`linux/amd64` and `linux/arm64`).
+
+```bash
+docker pull ghcr.io/zypher-systems/wyldetrace:latest
+```
 
 ## Production
 
@@ -48,8 +60,12 @@ No CI until 1.0.0. Before merging, run `make test` (Go unit + integration tests)
 cp .env.example .env
 # require: JWT_SECRET, ADMIN_PASSWORD, DATABASE_URL
 # set WYLDTRACE_DEV=false, SETTINGS_ENCRYPTION_KEY, CORS_ORIGINS
-make prod
+# pull the published image, or build it with `make prod`
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull app
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d db app
 ```
+
+`make prod` still builds from this tree. Set `WYLDTRACE_IMAGE_TAG` to pin a published tag other than `latest`.
 
 Browse http://localhost:8080 — the SPA is embedded in the Go binary. ICMP sweeps may need `NET_RAW` (already set in Compose).
 

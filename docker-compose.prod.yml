@@ -15,6 +15,7 @@ services:
   # and per-job locks for RunNow / due sweeps (lock + unlock must share that session).
   # Terminate TLS at a reverse proxy; do not publish Postgres publicly.
   app:
+    image: ghcr.io/zypher-systems/wyldetrace:${WYLDTRACE_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
