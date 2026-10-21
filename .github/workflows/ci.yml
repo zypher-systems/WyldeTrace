@@ -262,23 +262,29 @@ jobs:
             -t "${IMAGE}:${sha}" \
             "${args[@]}"
 
-      - name: Make the package public
+      - name: Confirm the image is public
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          for i in 1 2 3 4 5 6; do
-            if gh api --method PUT \
-              -H "Accept: application/vnd.github+json" \
-              "/orgs/${{ github.repository_owner }}/packages/container/wyldetrace/visibility" \
-              -f visibility=public; then
-              echo "package is public"
-              exit 0
-            fi
-            echo "package not visible yet (${i})"
-            sleep 10
+          # User accounts and orgs use different admin routes. An already-public
+          # package returns 404 from both. The anonymous pull is the real check.
+          gh api --method PUT -H "Accept: application/vnd.github+json" \
+            "/user/packages/container/wyldetrace/visibility" \
+            -f visibility=public || true
+          gh api --method PUT -H "Accept: application/vnd.github+json" \
+            "/orgs/${{ github.repository_owner }}/packages/container/wyldetrace/visibility" \
+            -f visibility=public || true
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          for tag in latest "${{ steps.version.outputs.version }}" "${GITHUB_SHA::12}"; do
+            token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/wyldetrace:pull" | jq -r .token)
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer ${token}" \
+              -H "Accept: application/vnd.oci.image.index.v1+json" \
+              "https://ghcr.io/v2/${owner}/wyldetrace/manifests/${tag}")
+            echo "${tag}: ${code}"
+            test "$code" = "200"
           done
-          exit 1
 
       - name: Inspect image
         run: docker buildx imagetools inspect "${IMAGE}:latest"
